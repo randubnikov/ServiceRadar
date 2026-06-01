@@ -1,0 +1,35 @@
+name: CI Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            us-east-1
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.ECR_URL }}:${{ github.ref_name }} ./backend
+          docker push ${{ secrets.ECR_URL }}:${{ github.ref_name }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name production-cluster --region us-east-1
+
+      - name: Deploy to production
+        run: kubectl rollout restart deployment/monitor -n production

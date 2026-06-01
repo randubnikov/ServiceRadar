@@ -1,0 +1,25 @@
+name: CI Feature Branch
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Lint code
+        run: pip install flake8 && flake8 backend/monitor.py --max-line-length=120
