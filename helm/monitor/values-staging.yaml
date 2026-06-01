@@ -1,7 +1,17 @@
 image:
   repository: 123456.dkr.ecr.us-east-1.amazonaws.com/staging-monitor
   tag: latest
+
 environment: staging
+
 db:
   host: staging-db.cluster.us-east-1.rds.amazonaws.com
-schedule: "*/1 * * * *"
+  name: monitor_db
+  user: admin
+  password: ""
+
+aws:
+  region: us-east-1
+  snsTopicArn: ""
+
+schedule: "*/10 * * * *"

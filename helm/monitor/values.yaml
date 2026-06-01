@@ -1,7 +1,17 @@
 image:
   repository: ""
   tag: latest
+
 environment: ""
+
 db:
   host: ""
   name: monitor_db
+  user: admin
+  password: ""
+
+aws:
+  region: us-east-1
+  snsTopicArn: ""
+
+schedule: "*/10 * * * *"

@@ -5,3 +5,27 @@ metadata:
   namespace: {{ .Values.environment }}
 spec:
   schedule: {{ .Values.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: monitor
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              env:
+                - name: DB_HOST
+                  value: {{ .Values.db.host | quote }}
+                - name: DB_NAME
+                  value: {{ .Values.db.name | quote }}
+                - name: DB_USER
+                  value: {{ .Values.db.user | quote }}
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: monitor-secrets
+                      key: db-password
+                - name: AWS_REGION
+                  value: {{ .Values.aws.region | quote }}
+                - name: SNS_TOPIC_ARN
+                  value: {{ .Values.aws.snsTopicArn | quote }}
+          restartPolicy: OnFailure
