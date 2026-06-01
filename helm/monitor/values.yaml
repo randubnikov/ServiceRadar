@@ -1,0 +1,7 @@
+image:
+  repository: ""
+  tag: latest
+environment: ""
+db:
+  host: ""
+  name: monitor_db

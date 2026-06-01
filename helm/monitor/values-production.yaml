@@ -1,0 +1,7 @@
+image:
+  repository: 123456.dkr.ecr.us-east-1.amazonaws.com/production-monitor
+  tag: latest
+environment: production
+db:
+  host: production-db.cluster.us-east-1.rds.amazonaws.com
+schedule: "*/5 * * * *"

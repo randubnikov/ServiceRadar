@@ -1,0 +1,6 @@
+apiVersion: v2
+name: monitor
+description: Service health monitor
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

@@ -1,0 +1,7 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: monitor
+  namespace: {{ .Values.environment }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
