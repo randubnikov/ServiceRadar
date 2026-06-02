@@ -4,5 +4,6 @@ __pycache__/
 *.tfstate
 *.tfstate.backup
 .terraform/
-*.tfvars*.zip
+*.tfvars
+*.zip
 scripts/morning.sh
