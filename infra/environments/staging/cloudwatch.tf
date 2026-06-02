@@ -2,7 +2,7 @@ resource "aws_cloudwatch_metric_alarm" "service_health" {
   for_each = var.monitored_services
 
   alarm_name          = "${each.key}-health-${var.environment}"
-  namespace           = "Route53"
+  namespace           = "AWS/Route53"
   metric_name         = "HealthCheckStatus"
   comparison_operator = "LessThanThreshold"
   threshold           = 1
