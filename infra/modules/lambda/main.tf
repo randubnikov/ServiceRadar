@@ -1,7 +1,7 @@
 # Zip the lambda function file automatically
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/../../../lambda/lambda_function.py"
+  source_dir  = "${path.module}/../../../lambda/package"
   output_path = "${path.module}/lambda_function.zip"
 }
 
