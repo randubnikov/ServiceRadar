@@ -22,6 +22,8 @@ variable "monitored_services" {
   default = {
     "payment-api"  = { url = "pay.myapp.com" }
     "auth-service" = { url = "auth.myapp.com" }
+    "test-service"   = { url = "httpbin.org" }
+    "broken-service" = { url = "this-does-not-exist.com" }
   }
 }
 variable "environment" {
