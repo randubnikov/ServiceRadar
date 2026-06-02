@@ -22,4 +22,4 @@ for service in services:
             "Type":                     "HTTPS",
             "RequestInterval":          30,
             "FailureThreshold":         3,
-        }
+        })
