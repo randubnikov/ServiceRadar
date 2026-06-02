@@ -19,7 +19,8 @@ def lambda_handler(event, context):
         database = os.environ["DB_NAME"]
     )
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("SELECT * FROM services WHERE name = %s", (alarm_name,))
+    service_key = alarm_name.replace("-health-staging", "").replace("-health-production", "")
+    cursor.execute("SELECT * FROM services WHERE LOWER(REPLACE(name, ' ', '-')) = %s", (service_key,))
     service = cursor.fetchone()
     cursor.execute(
         "INSERT INTO incidents (service_id, status, error_message) VALUES (%s, %s, %s)",
