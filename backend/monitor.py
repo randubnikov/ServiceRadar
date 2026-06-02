@@ -16,13 +16,15 @@ conn.close()
 route53 = boto3.client("route53")
 
 existing = route53.list_health_checks()
-existing_refs = {hc["CallerReference"] for hc in existing["HealthChecks"]}
+existing_domains = {
+    hc["HealthCheckConfig"]["FullyQualifiedDomainName"]
+    for hc in existing["HealthChecks"]
+}
 
 for service in services:
-    ref = str(service["id"])
-    if ref not in existing_refs:
+    if service["url"] not in existing_domains:
         route53.create_health_check(
-            CallerReference   = ref,
+            CallerReference   = service["url"],
             HealthCheckConfig = {
                 "FullyQualifiedDomainName": service["url"],
                 "Type":                     "HTTPS",
