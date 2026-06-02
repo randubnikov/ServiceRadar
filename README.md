@@ -1,159 +1,120 @@
-# Service Monitor — DevOps Final Project
+# Service Monitor
 
-A real-time service monitoring platform that automatically detects failures and alerts the responsible developer via email.
-
----
-
-## What it does
-
-- Monitors any number of URLs every 30 seconds using AWS Route53 Health Checks
-- Detects DOWN and SLOW services automatically
-- Sends email alerts to the responsible developer via AWS SNS
-- Saves every incident to Aurora MySQL for history and reporting
-- Displays live dashboards in Grafana
+A DevOps final project — a monitoring system that watches your services and alerts the right developer when something breaks.
 
 ---
 
-## Architecture
+## The idea
+
+I wanted to build something that actually solves a real problem. Instead of a todo app or a blog, I built a tool that continuously checks if your services are alive and sends an email to whoever owns that service the moment something goes wrong.
+
+The whole thing runs on AWS and Kubernetes — no manual intervention needed.
+
+---
+
+## How it works
+
+You register a service (a URL + a developer's email) in the database. From that point on, AWS Route53 checks that URL every 30 seconds. If it fails 3 times in a row, CloudWatch fires an alarm, SNS sends an email to the developer, and a Lambda function saves the incident to the database.
 
 ```
-Developer → GitHub → GitHub Actions → ECR → ArgoCD → EKS
-                                                  ↑
-                                         Terraform built this
-
-EKS runs monitor.py (CronJob every 30 min)
+Register service in DB
       ↓
-monitor.py reads services from Aurora MySQL
+Route53 checks URL every 30s
       ↓
-Registers URLs with Route53
+Service goes DOWN
       ↓
-Route53 checks each URL every 30 seconds
-      ↓
-Service DOWN → CloudWatch Alarm fires
-      ↓
-SNS sends email to developer
-Lambda writes incident to Aurora MySQL
+Email → developer
+Incident → saved to DB
+Dashboard → turns red
 ```
 
 ---
 
-## Technologies
+## Stack
 
-| Category | Technology |
-|---|---|
-| Cloud | AWS (EKS, Aurora MySQL, ECR, Route53, CloudWatch, SNS, Lambda, S3) |
-| Infrastructure | Terraform |
-| Container | Docker |
-| Orchestration | Kubernetes |
-| Packaging | Helm |
-| GitOps | ArgoCD |
-| CI/CD | GitHub Actions |
-| Monitoring | Prometheus + Grafana |
-| Backend | Python 3.12 |
-| Database | Aurora MySQL |
+- **AWS** — EKS, Aurora MySQL, ECR, Route53, CloudWatch, SNS, Lambda, S3
+- **Terraform** — builds all infrastructure
+- **Docker + Kubernetes** — runs the app
+- **Helm** — manages deployments
+- **ArgoCD** — GitOps, auto-deploys on every push
+- **GitHub Actions** — CI/CD pipeline
+- **Prometheus + Grafana** — monitoring dashboards
+- **Python 3.12** — backend worker script
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 final-project/
-├── backend/
-│   ├── monitor.py           # reads services from DB, registers with Route53
-│   ├── schema.sql           # creates database tables
-│   ├── Dockerfile           # packages monitor.py into a container
-│   └── requirements.txt     # Python dependencies
-├── lambda/
-│   └── lambda_function.py   # writes incidents to DB when CloudWatch fires
-├── infra/
-│   ├── modules/
-│   │   ├── vpc/             # AWS network
-│   │   ├── eks/             # Kubernetes cluster
-│   │   ├── aurora/          # MySQL database
-│   │   ├── ecr/             # Docker image storage
-│   │   └── lambda/          # serverless function
-│   └── environments/
-│       ├── staging/         # staging infrastructure
-│       └── production/      # production infrastructure
-├── helm/
-│   └── monitor/             # Helm chart for Kubernetes deployment
-├── gitops/
-│   ├── staging/             # ArgoCD staging config
-│   ├── production/          # ArgoCD production config
-│   └── monitoring/          # Grafana dashboard config
-└── .github/
-    └── workflows/
-        ├── ci-feature.yml   # lint on feature branch
-        ├── ci-master.yml    # build + deploy to staging on merge
-        └── ci-release.yml   # deploy to production on version tag
+├── backend/          # Python worker + SQL schema + Dockerfile
+├── lambda/           # AWS Lambda function for incident tracking
+├── infra/            # Terraform modules and environments
+├── helm/             # Kubernetes deployment configs
+├── gitops/           # ArgoCD configs for staging and production
+└── .github/          # GitHub Actions workflows
 ```
 
 ---
 
-## How to Run
+## Running it
 
-### 1. Prerequisites
+### Prerequisites
 - AWS CLI configured
-- Terraform installed
-- kubectl installed
-- Helm installed
+- Terraform, kubectl, Helm installed
 
-### 2. Create S3 bucket for Terraform state
+### Steps
+
 ```bash
+# 1. Create S3 bucket for Terraform state
 aws s3api create-bucket \
   --bucket monitor-terraform-state-randubnikov \
   --region us-east-1
-```
 
-### 3. Run Terraform
-```bash
+# 2. Run Terraform
 cd infra/environments/staging
 terraform init
 terraform apply
-```
 
-### 4. Run schema.sql on Aurora MySQL
-```bash
+# 3. Set up the database
 mysql -h YOUR_AURORA_ENDPOINT -u admin -p monitor_db < backend/schema.sql
-```
 
-### 5. Add services to monitor
-```sql
+# 4. Add a service to monitor
 INSERT INTO services (name, url, dev_name, dev_email)
 VALUES ('Payment API', 'https://httpbin.org/status/200', 'John', 'john@gmail.com');
-```
 
-### 6. Deploy with Helm
-```bash
+# 5. Deploy with Helm
 helm install monitor ./helm/monitor \
   -f helm/monitor/values-staging.yaml \
   --set db.password=YOUR_PASSWORD
-```
 
-### 7. Apply ArgoCD config
-```bash
+# 6. Apply ArgoCD
 kubectl apply -f gitops/staging/monitor.yaml
 ```
 
 ---
 
-## Live Demo
+## Demo
 
-1. Open Grafana dashboard — all services GREEN
-2. Add a broken service:
+The demo is simple but effective:
+
+1. Show Grafana — all services green
+2. Add a broken URL to the database
+3. Wait 30 seconds
+4. Email arrives live
+5. Grafana turns red
+6. Incidents table shows the new entry
+
 ```sql
+-- Add a broken service for demo
 INSERT INTO services (name, url, dev_name, dev_email)
 VALUES ('Demo Service', 'https://httpbin.org/status/503', 'John', 'john@gmail.com');
 ```
-3. Wait 30 seconds — Route53 detects the failure
-4. CloudWatch fires → SNS sends email → Lambda saves incident
-5. Show email arriving in real time
-6. Show Grafana turning RED
-7. Show incidents table updated in Aurora MySQL
 
 ---
 
 ## Cleanup
+
 ```bash
 cd infra/environments/staging
 terraform destroy
