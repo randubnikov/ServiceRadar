@@ -20,7 +20,7 @@ variable "monitored_services" {
     url = string
   }))
   default = {
-    "payment-api" = { url = "pay.myapp.com" }
+    "payment-api"  = { url = "pay.myapp.com" }
     "auth-service" = { url = "auth.myapp.com" }
   }
 }

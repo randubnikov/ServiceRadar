@@ -4,4 +4,4 @@ __pycache__/
 *.tfstate
 *.tfstate.backup
 .terraform/
-*.tfvars
+*.tfvars*.zip
