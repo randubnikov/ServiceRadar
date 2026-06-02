@@ -15,8 +15,7 @@ resource "aws_cloudwatch_metric_alarm" "service_health" {
   }
 
   alarm_actions = [
-    aws_sns_topic.alerts.arn,
-    module.lambda.lambda_arn
+    aws_sns_topic.alerts.arn
   ]
 
   tags = {
