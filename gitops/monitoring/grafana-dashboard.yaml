@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  monitor-dashboard.json: |
+    {
+      "title": "Service Monitor Dashboard",
+      "panels": [
+        {
+          "title": "Services UP",
+          "type": "stat",
+          "targets": [{
+            "expr": "count(aws_route53_health_check_status == 1)"
+          }]
+        },
+        {
+          "title": "Services DOWN",
+          "type": "stat",
+          "targets": [{
+            "expr": "count(aws_route53_health_check_status == 0)"
+          }]
+        },
+        {
+          "title": "Total Incidents Today",
+          "type": "stat",
+          "targets": [{
+            "expr": "count(incidents_total)"
+          }]
+        },
+        {
+          "title": "Pod CPU Usage",
+          "type": "graph",
+          "targets": [{
+            "expr": "rate(container_cpu_usage_seconds_total[5m])"
+          }]
+        }
+      ]
+    }
