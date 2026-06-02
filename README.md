@@ -4,7 +4,6 @@ A DevOps final project — a monitoring system that watches your services and al
 
 ---
 
-## The idea
 
 I wanted to build something that actually solves a real problem. Instead of a todo app or a blog, I built a tool that continuously checks if your services are alive and sends an email to whoever owns that service the moment something goes wrong.
 
