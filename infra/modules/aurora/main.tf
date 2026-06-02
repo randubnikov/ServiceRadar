@@ -6,7 +6,7 @@ resource "aws_security_group" "aurora" {
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
-    cidr_blocks = var.private_subnets_cidr
+    cidr_blocks = ["10.0.0.0/16"]
   }
 
   egress {
