@@ -7,3 +7,5 @@ __pycache__/
 *.tfvars
 *.zip
 scripts/morning.sh
+lambda/package/
+lambda/lambda_function.zip
