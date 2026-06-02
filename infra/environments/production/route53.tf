@@ -1,14 +1,15 @@
-resource "aws_sns_topic" "alerts" {
-  name = "${var.environment}-monitor-alerts"
+resource "aws_route53_health_check" "services" {
+  for_each = var.monitored_services
+
+  fqdn              = each.value.url
+  type              = "HTTPS"
+  port              = 443
+  request_interval  = 30
+  failure_threshold = 3
 
   tags = {
+    Name        = each.key
     Environment = var.environment
     Project     = "monitor"
   }
-}
-
-resource "aws_sns_topic_subscription" "email" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
 }
