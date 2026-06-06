@@ -47,10 +47,11 @@ resource "aws_lambda_function" "incident_handler" {
 
   environment {
     variables = {
-      DB_HOST     = var.aurora_endpoint
-      DB_NAME     = "monitor_db"
+      DB_HOST     = var.db_host
       DB_USER     = var.db_username
       DB_PASSWORD = var.db_password
+      DB_NAME     = var.db_name
+      ALERT_EMAIL = var.alert_email
     }
   }
 
@@ -58,4 +59,8 @@ resource "aws_lambda_function" "incident_handler" {
     Environment = var.environment
     Project     = "monitor"
   }
+}
+resource "aws_iam_role_policy_attachment" "lambda_ses" {
+  role       = aws_iam_role.lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSESFullAccess"
 }
