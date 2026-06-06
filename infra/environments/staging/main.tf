@@ -25,7 +25,6 @@ module "ecr" {
   source      = "../../modules/ecr"
   environment = "staging"
 }
-
 module "lambda" {
   source            = "../../modules/lambda"
   environment       = "staging"
@@ -34,4 +33,7 @@ module "lambda" {
   aurora_endpoint   = module.aurora.aurora_endpoint
   db_username       = var.db_username
   db_password       = var.db_password
+  db_host           = module.aurora.aurora_endpoint
+  db_name           = "monitor_db"
+  alert_email       = var.alert_email
 }
