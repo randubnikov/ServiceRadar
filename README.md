@@ -24,6 +24,29 @@ Grafana dashboard turns red
 
 No one has to notice. The system notices for you.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    Dev[Developer] -->|git push| GH[GitHub]
+    GH -->|triggers| GHA[GitHub Actions]
+    GHA -->|builds & pushes image| ECR[ECR]
+    GHA -->|syncs manifests| ARGO[ArgoCD]
+    ARGO -->|deploys| EKS[EKS Cluster]
+    ECR -->|pulls image| EKS
+    EKS -->|CronJob every 10min| MON[monitor.py]
+    MON -->|reads services| DB[(Aurora MySQL)]
+    TF[Terraform] -->|creates health checks| R53[Route53]
+    TF -->|creates alarms| CW[CloudWatch]
+    R53 -->|checks URLs every 30s| INT[Internet]
+    R53 -->|reports status| CW
+    CW -->|alarm fires| SNS[SNS]
+    SNS -->|triggers| LAM[Lambda]
+    LAM -->|writes incident| DB
+    LAM -->|sends alert| SES[SES]
+    SES -->|email| DEV[Developer]
+    DB -->|datasource| GRF[Grafana]
+```
 ---
 
 ## What I used
@@ -39,6 +62,7 @@ I tried to pick tools that are actually used in real companies, not just tutoria
 - **Route53** — does the actual health checking from multiple AWS regions
 - **CloudWatch** — watches the health check metrics and fires alarms
 - **Lambda** — serverless function that handles the alarm, writes to DB, sends email
+- **SNS** — the bridge between CloudWatch and Lambda. Alarm fires → SNS → Lambda triggered.
 - **SES** — sends the alert email. No confirmation links, no spam filters killing it.
 - **Grafana** — dashboard showing all services and incident history
 
@@ -64,6 +88,14 @@ final-project/
 └── .github/workflows/    # CI/CD pipelines
 ```
 
+## Prerequisites
+
+- AWS CLI configured with admin permissions
+- Terraform installed
+- kubectl installed
+- Helm installed
+- ArgoCD CLI installed
+- Docker installed
 ---
 
 ## Running it
