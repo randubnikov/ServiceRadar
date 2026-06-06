@@ -7,7 +7,6 @@ resource "aws_sns_topic" "alerts" {
   }
 }
 
-}
 resource "aws_sns_topic_subscription" "lambda" {
   topic_arn = aws_sns_topic.alerts.arn
   protocol  = "lambda"
