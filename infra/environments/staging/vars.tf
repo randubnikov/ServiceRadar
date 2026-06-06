@@ -19,12 +19,12 @@ variable "monitored_services" {
   type = map(object({
     url = string
   }))
-  default = {
-    "payment-gateway" = { url = "this-also-fails.com" }
-    "payment-api"  = { url = "pay.myapp.com" }
-    "auth-service" = { url = "auth.myapp.com" }
-    "broken-service" = { url = "this-does-not-exist.com" }
-  }
+default = {
+  "google"          = { url = "www.google.com" }
+  "github"          = { url = "www.github.com" }
+  "httpbin"         = { url = "httpbin.org" }
+  "broken-service"  = { url = "this-does-not-exist.com" }
+}
 }
 variable "environment" {
   description = "staging or production"

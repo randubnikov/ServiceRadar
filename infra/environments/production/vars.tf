@@ -20,9 +20,10 @@ variable "monitored_services" {
     url = string
   }))
   default = {
-    "payment-api" = { url = "pay.myapp.com" }
-    "auth-service" = { url = "auth.myapp.com" }
-  }
+  "google"    = { url = "www.google.com" }
+  "github"    = { url = "www.github.com" }
+  "httpbin"   = { url = "httpbin.org" }
+}
 }
 variable "environment" {
   description = "staging or production"
