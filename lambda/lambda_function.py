@@ -34,7 +34,7 @@ def lambda_handler(event, context):
 
         ses = boto3.client('ses', region_name='us-east-1')
         ses.send_email(
-            Source=os.environ['ALERT_EMAIL'],
+            Source=service['dev_email'],
             Destination={'ToAddresses': [service['dev_email']]},
             Message={
                 'Subject': {'Data': f"🚨 ALERT: {service['name']} is {status}"},

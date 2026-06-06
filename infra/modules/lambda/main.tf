@@ -51,7 +51,6 @@ resource "aws_lambda_function" "incident_handler" {
       DB_USER     = var.db_username
       DB_PASSWORD = var.db_password
       DB_NAME     = var.db_name
-      ALERT_EMAIL = var.alert_email
     }
   }
 
