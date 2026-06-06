@@ -12,9 +12,8 @@ sleep 60
 
 echo "Cleaning up leftover security groups..."
 VPC_ID=$(aws ec2 describe-vpcs --region us-east-1 \
-  --filters "Name=tag:Project,Values=monitor" \
+  --filters "Name=tag:Name,Values=staging-vpc" \
   --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
-
 if [ "$VPC_ID" != "None" ] && [ -n "$VPC_ID" ]; then
   echo "Found VPC: $VPC_ID"
   for sg in $(aws ec2 describe-security-groups \
