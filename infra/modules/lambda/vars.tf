@@ -29,3 +29,17 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+variable "db_host" {
+  description = "Aurora MySQL endpoint"
+  type        = string
+}
+
+variable "db_name" {
+  description = "Database name"
+  type        = string
+}
+
+variable "alert_email" {
+  description = "Email address for alerts"
+  type        = string
+}
