@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/randubnikov/final-project
+    repoURL: https://github.com/randubnikov/ServiceRadar
     targetRevision: main
     path: helm/monitor
     helm:
