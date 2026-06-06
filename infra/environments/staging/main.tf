@@ -35,5 +35,4 @@ module "lambda" {
   db_password       = var.db_password
   db_host           = module.aurora.aurora_endpoint
   db_name           = "monitor_db"
-  alert_email       = var.alert_email
 }
