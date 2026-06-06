@@ -123,6 +123,27 @@ One command. It takes about 20 minutes and sets up everything:
 
 Cleans up the load balancers and destroys everything. Running this overnight saves about $7/day.
 
+### Verify everything is destroyed
+
+```bash
+# Check EKS cluster
+aws eks list-clusters --region us-east-1
+
+# Check Aurora
+aws rds describe-db-clusters --region us-east-1 \
+  --query 'DBClusters[*].DBClusterIdentifier'
+
+# Check VPC
+aws ec2 describe-vpcs --region us-east-1 \
+  --filters "Name=tag:Name,Values=staging-vpc" \
+  --query 'Vpcs[*].VpcId'
+
+# Check Lambda
+aws lambda list-functions --region us-east-1 \
+  --query 'Functions[?starts_with(FunctionName, `staging`)].FunctionName'
+```
+
+All should return empty `[]`.
 ---
 
 ## Two environments
