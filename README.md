@@ -1,120 +1,155 @@
 # Service Monitor
 
-A DevOps final project — a monitoring system that watches your services and alerts the right developer when something breaks.
+I built this because I got tired of finding out a service was down from a customer complaint instead of from my own system.
+
+This is a real-time monitoring platform that watches your URLs, detects failures within 90 seconds, and emails the right developer automatically. No polling dashboards. No manual checks. Just an email when something breaks.
 
 ---
 
+## The idea
 
-I wanted to build something that actually solves a real problem. Instead of a todo app or a blog, I built a tool that continuously checks if your services are alive and sends an email to whoever owns that service the moment something goes wrong.
-
-The whole thing runs on AWS and Kubernetes — no manual intervention needed.
-
----
-
-## How it works
-
-You register a service (a URL + a developer's email) in the database. From that point on, AWS Route53 checks that URL every 30 seconds. If it fails 3 times in a row, CloudWatch fires an alarm, SNS sends an email to the developer, and a Lambda function saves the incident to the database.
+You add a service to the database — a name, a URL, and the developer's email. That's it. From that point on, AWS Route53 pings that URL every 30 seconds. Three failures in a row and the whole chain fires:
 
 ```
-Register service in DB
+Service goes down
+      ↓ ~90 seconds later
+CloudWatch detects it
       ↓
-Route53 checks URL every 30s
+SNS triggers Lambda
       ↓
-Service goes DOWN
-      ↓
-Email → developer
-Incident → saved to DB
-Dashboard → turns red
+Developer gets an email
+Incident is saved to the database
+Grafana dashboard turns red
 ```
 
----
-
-## Stack
-
-- **AWS** — EKS, Aurora MySQL, ECR, Route53, CloudWatch, SNS, Lambda, S3
-- **Terraform** — builds all infrastructure
-- **Docker + Kubernetes** — runs the app
-- **Helm** — manages deployments
-- **ArgoCD** — GitOps, auto-deploys on every push
-- **GitHub Actions** — CI/CD pipeline
-- **Prometheus + Grafana** — monitoring dashboards
-- **Python 3.12** — backend worker script
+No one has to notice. The system notices for you.
 
 ---
 
-## Project structure
+## What I used
+
+I tried to pick tools that are actually used in real companies, not just tutorial stacks:
+
+- **Terraform** — every AWS resource is code. Nothing was clicked in the console.
+- **EKS + Kubernetes** — the app runs in a real cluster with 2 nodes
+- **Helm** — deployments are templated and versioned
+- **ArgoCD** — push to GitHub, it deploys itself. That's GitOps.
+- **GitHub Actions** — CI builds the image and pushes it to ECR on every merge
+- **Aurora MySQL** — stores services and incidents
+- **Route53** — does the actual health checking from multiple AWS regions
+- **CloudWatch** — watches the health check metrics and fires alarms
+- **Lambda** — serverless function that handles the alarm, writes to DB, sends email
+- **SES** — sends the alert email. No confirmation links, no spam filters killing it.
+- **Grafana** — dashboard showing all services and incident history
+
+---
+
+## Project layout
 
 ```
 final-project/
-├── backend/          # Python worker + SQL schema + Dockerfile
-├── lambda/           # AWS Lambda function for incident tracking
-├── infra/            # Terraform modules and environments
-├── helm/             # Kubernetes deployment configs
-├── gitops/           # ArgoCD configs for staging and production
-└── .github/          # GitHub Actions workflows
+├── backend/              # The Python worker that runs in Kubernetes
+│   ├── monitor.py        # reads DB, logs service status
+│   ├── Dockerfile
+│   └── requirements.txt
+├── lambda/               # Triggered by SNS when an alarm fires
+│   └── lambda_function.py
+├── infra/                # All Terraform code
+│   ├── modules/          # vpc, eks, aurora, ecr, lambda
+│   └── environments/
+│       ├── staging/      # where I develop and demo
+│       └── production/   # same setup, real services
+├── helm/monitor/         # Kubernetes CronJob definition
+├── gitops/               # ArgoCD application manifests
+└── .github/workflows/    # CI/CD pipelines
 ```
 
 ---
 
 ## Running it
 
-### Prerequisites
-- AWS CLI configured
-- Terraform, kubectl, Helm installed
-
-### Steps
+### Every morning
 
 ```bash
-# 1. Create S3 bucket for Terraform state
-aws s3api create-bucket \
-  --bucket monitor-terraform-state-randubnikov \
+~/final-project/scripts/morning.sh
+```
+
+One command. It takes about 20 minutes and sets up everything:
+- Creates 73 AWS resources with Terraform
+- Connects kubectl to the EKS cluster
+- Installs ArgoCD and connects it to GitHub
+- Deploys the app
+- Creates the database tables and inserts the services
+- Resets alarms so they fire naturally
+- Installs Grafana and exposes it
+
+### Every evening
+
+```bash
+~/final-project/scripts/evening.sh
+```
+
+Cleans up the load balancers and destroys everything. Running this overnight saves about $7/day.
+
+---
+
+## Two environments
+
+I set up both staging and production. They're identical infrastructure-wise — same Terraform code, same Helm chart. The difference is what they monitor:
+
+| | Staging | Production |
+|---|---|---|
+| Services | test URLs + a broken one | real company services |
+| Check frequency | every 10 min | every 30 min |
+| Purpose | development + demo | always on |
+
+---
+
+## The demo
+
+The live demo takes about 2 minutes:
+
+1. Open Grafana — show the services table. Google, GitHub, Amazon all healthy.
+2. Point at the broken service — it's already in ALARM.
+3. Reset and retrigger the alarm:
+
+```bash
+aws cloudwatch set-alarm-state \
+  --alarm-name "broken-service-health-staging" \
+  --state-value OK \
+  --state-reason "reset" \
   --region us-east-1
 
-# 2. Run Terraform
-cd infra/environments/staging
-terraform init
-terraform apply
+sleep 2
 
-# 3. Set up the database
-mysql -h YOUR_AURORA_ENDPOINT -u admin -p monitor_db < backend/schema.sql
-
-# 4. Add a service to monitor
-INSERT INTO services (name, url, dev_name, dev_email)
-VALUES ('Payment API', 'https://httpbin.org/status/200', 'John', 'john@gmail.com');
-
-# 5. Deploy with Helm
-helm install monitor ./helm/monitor \
-  -f helm/monitor/values-staging.yaml \
-  --set db.password=YOUR_PASSWORD
-
-# 6. Apply ArgoCD
-kubectl apply -f gitops/staging/monitor.yaml
+aws cloudwatch set-alarm-state \
+  --alarm-name "broken-service-health-staging" \
+  --state-value ALARM \
+  --state-reason "Service is down" \
+  --region us-east-1
 ```
+
+4. An email arrives within seconds.
+5. Refresh Grafana — the incident is in the table.
+
+That's the whole system working end to end, live.
 
 ---
 
-## Demo
+## Cost
 
-The demo is simple but effective:
+About $0.31/hour when running. I destroy it every night.
 
-1. Show Grafana — all services green
-2. Add a broken URL to the database
-3. Wait 30 seconds
-4. Email arrives live
-5. Grafana turns red
-6. Incidents table shows the new entry
+| Resource | $/hour |
+|---|---|
+| EKS cluster | $0.10 |
+| 2x EC2 t3.medium | $0.08 |
+| Aurora MySQL | $0.08 |
+| NAT Gateway | $0.05 |
+| Everything else | ~$0.00 |
 
-```sql
--- Add a broken service for demo
-INSERT INTO services (name, url, dev_name, dev_email)
-VALUES ('Demo Service', 'https://httpbin.org/status/503', 'John', 'john@gmail.com');
-```
+Running 4 hours a day comes out to about $37/month.
 
 ---
 
-## Cleanup
-
-```bash
-cd infra/environments/staging
-terraform destroy
-```
+Built by Ran Dubnikov — DevOps Final Project, 2026
