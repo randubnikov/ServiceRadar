@@ -22,7 +22,7 @@ variable "monitored_services" {
 default = {
   "google"          = { url = "www.google.com" }
   "github"          = { url = "www.github.com" }
-  "httpbin"         = { url = "httpbin.org" }
+  "amazon"          = { url = "www.amazon.com" }
   "broken-service"  = { url = "this-does-not-exist.com" }
 }
 }
