@@ -13,7 +13,7 @@ def get_conn():
     )
 
 def handle_api(event):
-    path = event.get('rawPath', '/')
+    path = event.get('rawPath') or event.get('path', '/')
     conn = get_conn()
     cursor = conn.cursor()
 
@@ -83,6 +83,7 @@ def handle_alarm(event):
 
     conn.close()
 def lambda_handler(event, context):
+    print("EVENT:", json.dumps(event))
     if 'rawPath' in event or 'path' in event:
         return handle_api(event)
     elif 'Records' in event:
@@ -92,5 +93,3 @@ def lambda_handler(event, context):
             'statusCode': 400,
             'body': 'Unknown event type'
         }
-def handle_api(event):
-    path = event.get('rawPath') or event.get('path', '/')
