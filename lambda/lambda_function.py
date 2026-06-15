@@ -82,9 +82,15 @@ def handle_alarm(event):
         print(f"Alert sent for {service['name']}: {status}")
 
     conn.close()
-
 def lambda_handler(event, context):
-    if 'rawPath' in event:
+    if 'rawPath' in event or 'path' in event:
         return handle_api(event)
-    else:
+    elif 'Records' in event:
         handle_alarm(event)
+    else:
+        return {
+            'statusCode': 400,
+            'body': 'Unknown event type'
+        }
+def handle_api(event):
+    path = event.get('rawPath') or event.get('path', '/')
