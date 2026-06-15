@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monitor Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0e10;
+      --surface:   #18181c;
+      --border:    #2a2a30;
+      --text:      #e8e8ec;
+      --muted:     #7a7a85;
+      --green:     #22c55e;
+      --green-bg:  #052e16;
+      --red:       #ef4444;
+      --red-bg:    #2d0707;
+      --yellow:    #eab308;
+      --yellow-bg: #2d2000;
+      --blue:      #60a5fa;
+      --blue-bg:   #0d1f3c;
+      --font:      'IBM Plex Sans', sans-serif;
+      --mono:      'IBM Plex Mono', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── TOP BAR ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .logo {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+    .logo span { color: var(--green); }
+    .header-meta {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── LAYOUT ── */
+    main { padding: 32px; max-width: 1100px; margin: 0 auto; }
+
+    /* ── STAT CARDS ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red   { color: var(--red);   }
+    .stat-value.yellow{ color: var(--yellow);}
+    .stat-value.blue  { color: var(--blue);  }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    /* ── ADD SERVICE FORM ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .form-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input, .field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--blue);
+    }
+    .field select option { background: var(--bg); }
+    .btn {
+      background: var(--green-bg);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 6px;
+      padding: 8px 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #073b1a; }
+
+    /* ── SERVICES TABLE ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 12px 20px;
+      text-align: left;
+      font-weight: 400;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    td {
+      padding: 14px 20px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .service-name { font-weight: 500; }
+    .service-url  { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── STATUS BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .badge.up     { background: var(--green-bg);  color: var(--green);  border: 1px solid #166534; }
+    .badge.up::before     { background: var(--green); }
+    .badge.down   { background: var(--red-bg);    color: var(--red);    border: 1px solid #7f1d1d; }
+    .badge.down::before   { background: var(--red); }
+    .badge.slow   { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #713f12; }
+    .badge.slow::before   { background: var(--yellow); }
+    .badge.unknown{ background: #1a1a1f;           color: var(--muted);  border: 1px solid var(--border); }
+    .badge.unknown::before{ background: var(--muted); }
+
+    .response-time { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .owner-name { font-size: 12px; color: var(--muted); }
+
+    /* ── ALERTS ── */
+    .alert-list { display: flex; flex-direction: column; gap: 1px; }
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-left: 3px solid transparent;
+    }
+    .alert-item.down   { border-left-color: var(--red);    background: #150606; }
+    .alert-item.slow   { border-left-color: var(--yellow); background: #140f00; }
+    .alert-item.up     { border-left-color: var(--green);  background: #030f07; }
+    .alert-time { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 50px; }
+    .alert-service { font-weight: 500; font-size: 13px; min-width: 140px; }
+    .alert-msg { font-size: 12px; color: var(--muted); flex: 1; }
+    .alert-owner { font-size: 11px; color: var(--muted); }
+    .ack-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: #1a1a1f;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .ack-badge.acked { background: var(--green-bg); color: var(--green); border-color: #166534; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">_<span>monitor</span></div>
+    <div class="header-meta">last checked: 14:32:01 UTC</div>
+  </header>
+
+  <main>
+
+    <!-- STAT CARDS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Services</div>
+        <div class="stat-value blue">6</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Up</div>
+        <div class="stat-value green">4</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Down</div>
+        <div class="stat-value red">1</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Slow</div>
+        <div class="stat-value yellow">1</div>
+      </div>
+    </div>
+
+    <!-- ADD SERVICE FORM -->
+    <div class="form-card">
+      <div class="form-title">Register a new service</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Service Name</label>
+          <input type="text" placeholder="Payment API" />
+        </div>
+        <div class="field">
+          <label>URL</label>
+          <input type="text" placeholder="https://api.example.com/health" />
+        </div>
+        <div class="field">
+          <label>Assign Developer</label>
+          <select>
+            <option>Sarah Cohen</option>
+            <option>John Levy</option>
+            <option>Mike Katz</option>
+          </select>
+        </div>
+        <div class="field">
+          <button class="btn">+ Add Service</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVICES TABLE -->
+    <div class="section-header">
+      <div class="section-title">Services</div>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Response Time</th>
+            <th>Last Checked</th>
+            <th>Owner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="service-name">Payment API</div>
+              <div class="service-url">https://pay.myapp.com/health</div>
+            </td>
+            <td><span class="badge up">UP</span></td>
+            <td><span class="response-time">142ms</span></td>
+            <td><span class="response-time">14:32:01</span></td>
+            <td><span class="owner-name">Sarah Cohen</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="service-name">Auth Service</div>
+              <div class="service-url">https://auth.myapp.com/health</div>
+            </td>
+            <td><span class="badge down">DOWN</span></td>
+            <td><span class="response-time">—</span></td>
+            <td><span class="response-time">14:31:59</span></td>
+            <td><span class="owner-name">John Levy</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="service-name">User Service</div>
+              <div class="service-url">https://users.myapp.com/health</div>
+            </td>
+            <td><span class="badge slow">SLOW</span></td>
+            <td><span class="response-time">2340ms</span></td>
+            <td><span class="response-time">14:32:00</span></td>
+            <td><span class="owner-name">Mike Katz</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="service-name">Email Service</div>
+              <div class="service-url">https://mail.myapp.com/health</div>
+            </td>
+            <td><span class="badge up">UP</span></td>
+            <td><span class="response-time">89ms</span></td>
+            <td><span class="response-time">14:32:01</span></td>
+            <td><span class="owner-name">Sarah Cohen</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="service-name">Notification API</div>
+              <div class="service-url">https://notify.myapp.com/health</div>
+            </td>
+            <td><span class="badge up">UP</span></td>
+            <td><span class="response-time">201ms</span></td>
+            <td><span class="response-time">14:32:00</span></td>
+            <td><span class="owner-name">Mike Katz</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="service-name">Report Generator</div>
+              <div class="service-url">https://reports.myapp.com/health</div>
+            </td>
+            <td><span class="badge up">UP</span></td>
+            <td><span class="response-time">310ms</span></td>
+            <td><span class="response-time">14:31:58</span></td>
+            <td><span class="owner-name">John Levy</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ALERT HISTORY -->
+    <div class="section-header">
+      <div class="section-title">Recent Alerts</div>
+    </div>
+    <div class="alert-list">
+      <div class="alert-item down">
+        <div class="alert-time">14:31</div>
+        <div class="alert-service">Auth Service</div>
+        <div class="alert-msg">Service unreachable — connection refused</div>
+        <div class="alert-owner">→ John Levy</div>
+        <div class="ack-badge">pending</div>
+      </div>
+      <div class="alert-item slow">
+        <div class="alert-time">14:28</div>
+        <div class="alert-service">User Service</div>
+        <div class="alert-msg">Response time exceeded 2000ms threshold</div>
+        <div class="alert-owner">→ Mike Katz</div>
+        <div class="ack-badge acked">acknowledged</div>
+      </div>
+      <div class="alert-item up">
+        <div class="alert-time">13:55</div>
+        <div class="alert-service">Payment API</div>
+        <div class="alert-msg">Service recovered after 4 min outage</div>
+        <div class="alert-owner">→ Sarah Cohen</div>
+        <div class="ack-badge acked">resolved</div>
+      </div>
+      <div class="alert-item down">
+        <div class="alert-time">13:51</div>
+        <div class="alert-service">Payment API</div>
+        <div class="alert-msg">HTTP 503 — service unavailable</div>
+        <div class="alert-owner">→ Sarah Cohen</div>
+        <div class="ack-badge acked">acknowledged</div>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>
