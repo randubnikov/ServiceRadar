@@ -1,11 +1,19 @@
 #!/bin/bash
 
-echo "Cleaning up load balancers..."
+echo "Cleaning up classic load balancers..."
 for lb in $(aws elb describe-load-balancers --region us-east-1 \
   --query 'LoadBalancerDescriptions[*].LoadBalancerName' \
   --output text 2>/dev/null); do
   aws elb delete-load-balancer --load-balancer-name $lb --region us-east-1
-  echo "Deleted LB: $lb"
+  echo "Deleted classic LB: $lb"
+done
+
+echo "Cleaning up v2 load balancers (ALB/NLB)..."
+for arn in $(aws elbv2 describe-load-balancers --region us-east-1 \
+  --query 'LoadBalancers[*].LoadBalancerArn' \
+  --output text 2>/dev/null); do
+  aws elbv2 delete-load-balancer --load-balancer-arn "$arn" --region us-east-1
+  echo "Deleted v2 LB: $arn"
 done
 
 echo "Waiting 60 seconds for LBs to release security groups..."
@@ -24,13 +32,20 @@ fi
 
 if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
   echo "Found VPC: $VPC_ID"
-  for sg in $(aws ec2 describe-security-groups \
-    --filters "Name=vpc-id,Values=$VPC_ID" \
-    --region us-east-1 \
-    --query 'SecurityGroups[?GroupName!=`default`].GroupId' \
-    --output text 2>/dev/null); do
-    echo "Deleting security group: $sg"
-    aws ec2 delete-security-group --group-id $sg --region us-east-1 2>/dev/null || true
+  for attempt in 1 2 3; do
+    FAILED=0
+    for sg in $(aws ec2 describe-security-groups \
+      --filters "Name=vpc-id,Values=$VPC_ID" \
+      --region us-east-1 \
+      --query 'SecurityGroups[?GroupName!=`default`].GroupId' \
+      --output text 2>/dev/null); do
+      aws ec2 delete-security-group --group-id "$sg" --region us-east-1 2>/dev/null \
+        && echo "Deleted SG: $sg" \
+        || { echo "SG $sg still in use, will retry"; FAILED=1; }
+    done
+    [ $FAILED -eq 0 ] && break
+    echo "Attempt $attempt/3 — waiting 30s before retry..."
+    sleep 30
   done
 else
   echo "No VPC found - skipping SG cleanup"
