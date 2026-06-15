@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo "Cleaning up load balancers..."
 for lb in $(aws elb describe-load-balancers --region us-east-1 \
   --query 'LoadBalancerDescriptions[*].LoadBalancerName' \
@@ -14,7 +15,14 @@ echo "Cleaning up leftover security groups..."
 VPC_ID=$(aws ec2 describe-vpcs --region us-east-1 \
   --filters "Name=tag:Name,Values=staging-vpc" \
   --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
-if [ "$VPC_ID" != "None" ] && [ -n "$VPC_ID" ]; then
+
+if [ -z "$VPC_ID" ] || [ "$VPC_ID" = "None" ]; then
+  VPC_ID=$(aws ec2 describe-vpcs --region us-east-1 \
+    --filters "Name=tag:Project,Values=monitor" \
+    --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
+fi
+
+if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
   echo "Found VPC: $VPC_ID"
   for sg in $(aws ec2 describe-security-groups \
     --filters "Name=vpc-id,Values=$VPC_ID" \
@@ -24,7 +32,10 @@ if [ "$VPC_ID" != "None" ] && [ -n "$VPC_ID" ]; then
     echo "Deleting security group: $sg"
     aws ec2 delete-security-group --group-id $sg --region us-east-1 2>/dev/null || true
   done
+else
+  echo "No VPC found - skipping SG cleanup"
 fi
+
 echo "Cleaning up ECR images..."
 aws ecr batch-delete-image \
   --repository-name staging-monitor \
@@ -33,6 +44,7 @@ aws ecr batch-delete-image \
   --query 'imageIds[*]' \
   --output json)" \
   --region us-east-1 2>/dev/null || true
+
 echo "Destroying infrastructure..."
 cd ~/final-project/infra/environments/staging
 terraform destroy -auto-approve
