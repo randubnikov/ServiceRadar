@@ -9,3 +9,4 @@ __pycache__/
 scripts/morning.sh
 lambda/package/
 lambda/lambda_function.zip
+k9s_Linux_amd64.tar.gz
