@@ -63,3 +63,46 @@ resource "aws_iam_role_policy_attachment" "lambda_ses" {
   role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSESFullAccess"
 }
+resource "aws_apigatewayv2_api" "dashboard" {
+  name          = "${var.environment}-serviceradar-api"
+  protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["GET", "OPTIONS"]
+    allow_headers = ["*"]
+  }
+}
+
+resource "aws_apigatewayv2_integration" "lambda" {
+  api_id             = aws_apigatewayv2_api.dashboard.id
+  integration_type   = "AWS_PROXY"
+  integration_uri    = aws_lambda_function.incident_handler.invoke_arn
+  integration_method = "POST"
+}
+
+resource "aws_apigatewayv2_route" "services" {
+  api_id    = aws_apigatewayv2_api.dashboard.id
+  route_key = "GET /services"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "incidents" {
+  api_id    = aws_apigatewayv2_api.dashboard.id
+  route_key = "GET /incidents"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_stage" "default" {
+  api_id      = aws_apigatewayv2_api.dashboard.id
+  name        = "$default"
+  auto_deploy = true
+}
+
+resource "aws_lambda_permission" "api_gateway" {
+  statement_id  = "AllowAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.incident_handler.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.dashboard.execution_arn}/*/*"
+}
