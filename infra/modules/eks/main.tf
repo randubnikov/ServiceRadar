@@ -29,3 +29,8 @@ resource "aws_iam_role_policy_attachment" "node_route53" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "node_cloudwatch_read" {
+  role       = module.eks.eks_managed_node_groups["default"].iam_role_name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
+}
+

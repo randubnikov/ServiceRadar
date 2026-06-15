@@ -22,6 +22,10 @@ resource "aws_cloudwatch_metric_alarm" "service_health" {
     aws_sns_topic.alerts.arn
   ]
 
+  insufficient_data_actions = [
+    aws_sns_topic.alerts.arn
+  ]
+
   depends_on = [aws_lambda_permission.sns]
 
   tags = {

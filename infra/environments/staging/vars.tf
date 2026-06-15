@@ -13,14 +13,17 @@ variable "db_password" {
 variable "monitored_services" {
   description = "Map of services to monitor"
   type = map(object({
-    url = string
+    url  = string
+    type = optional(string, "HTTPS")
+    port = optional(number, 443)
+    path = optional(string, "/")
   }))
-default = {
-  "google"          = { url = "www.google.com" }
-  "github"          = { url = "www.github.com" }
-  "amazon"          = { url = "www.amazon.com" }
-  "broken-service"  = { url = "this-does-not-exist.com" }
-}
+  default = {
+    "google"         = { url = "www.google.com" }
+    "github"         = { url = "www.github.com" }
+    "amazon"         = { url = "www.amazon.com" }
+    "broken-service" = { url = "this-does-not-exist.com" }
+  }
 }
 variable "environment" {
   description = "staging or production"
