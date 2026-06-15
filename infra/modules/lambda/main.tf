@@ -40,6 +40,10 @@ resource "aws_lambda_function" "incident_handler" {
   runtime          = "python3.12"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
   vpc_config {
     subnet_ids         = var.private_subnets
     security_group_ids = [var.security_group_id]
@@ -62,6 +66,30 @@ resource "aws_lambda_function" "incident_handler" {
 resource "aws_iam_role_policy_attachment" "lambda_ses" {
   role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+}
+
+resource "aws_sqs_queue" "lambda_dlq" {
+  name                      = "${var.environment}-incident-handler-dlq"
+  message_retention_seconds = 1209600
+
+  tags = {
+    Environment = var.environment
+    Project     = "monitor"
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_dlq" {
+  name = "${var.environment}-lambda-dlq-policy"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "sqs:SendMessage"
+      Resource = aws_sqs_queue.lambda_dlq.arn
+    }]
+  })
 }
 resource "aws_apigatewayv2_api" "dashboard" {
   name          = "${var.environment}-serviceradar-api"

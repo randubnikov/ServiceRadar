@@ -6,3 +6,8 @@ output "api_url" {
   description = "API Gateway URL"
   value       = aws_apigatewayv2_api.dashboard.api_endpoint
 }
+
+output "dlq_url" {
+  description = "Dead letter queue URL for failed Lambda invocations"
+  value       = aws_sqs_queue.lambda_dlq.url
+}
