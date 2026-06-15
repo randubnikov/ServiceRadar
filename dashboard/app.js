@@ -19,7 +19,7 @@ async function loadData() {
       <td class="name-cell">${i.name}</td>
       <td><span class="badge ${i.status.toLowerCase()}">${i.status}</span></td>
       <td><span class="error-msg">${i.error_message}</span></td>
-      <td>${new Date(i.created_at + ' UTC').toLocaleString()}</td>
+      <td>${new Date(i.created_at + ' UTC').toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
     </tr>
   `).join('');
 
