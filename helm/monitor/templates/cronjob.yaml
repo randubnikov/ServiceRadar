@@ -12,6 +12,7 @@ spec:
           containers:
             - name: monitor
               image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              imagePullPolicy: Always
               env:
                 - name: DB_HOST
                   value: {{ .Values.db.host | quote }}

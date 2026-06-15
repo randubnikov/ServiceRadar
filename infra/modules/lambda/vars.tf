@@ -13,11 +13,6 @@ variable "security_group_id" {
   type        = string
 }
 
-variable "aurora_endpoint" {
-  description = "Aurora MySQL endpoint from Aurora module"
-  type        = string
-}
-
 variable "db_username" {
   description = "Database username"
   type        = string

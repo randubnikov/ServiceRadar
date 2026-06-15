@@ -15,27 +15,25 @@ def get_conn():
 def handle_api(event):
     path = event.get('rawPath') or event.get('path', '/')
     conn = get_conn()
-    cursor = conn.cursor()
-
-    if path == '/services':
-        cursor.execute("SELECT * FROM services")
-        data = cursor.fetchall()
-
-    elif path == '/incidents':
-        cursor.execute("""
-            SELECT incidents.id, services.name, incidents.status,
-                   incidents.error_message,
-                   CAST(incidents.created_at AS CHAR) as created_at
-            FROM incidents
-            JOIN services ON incidents.service_id = services.id
-            ORDER BY incidents.created_at DESC
-        """)
-        data = cursor.fetchall()
-
-    else:
-        data = []
-
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        if path == '/services':
+            cursor.execute("SELECT * FROM services")
+            data = cursor.fetchall()
+        elif path == '/incidents':
+            cursor.execute("""
+                SELECT incidents.id, services.name, incidents.status,
+                       incidents.error_message,
+                       CAST(incidents.created_at AS CHAR) as created_at
+                FROM incidents
+                JOIN services ON incidents.service_id = services.id
+                ORDER BY incidents.created_at DESC
+            """)
+            data = cursor.fetchall()
+        else:
+            data = []
+    finally:
+        conn.close()
 
     return {
         'statusCode': 200,
@@ -54,34 +52,36 @@ def handle_alarm(event):
 
     service_key = alarm_name.replace("-health-staging", "").replace("-health-production", "")
 
-    conn   = get_conn()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM services WHERE LOWER(REPLACE(name, ' ', '-')) = %s",
-        (service_key,)
-    )
-    service = cursor.fetchone()
-
-    if service:
-        status = "DOWN" if alarm_state == "ALARM" else "UP"
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO incidents (service_id, status, error_message) VALUES (%s, %s, %s)",
-            (service["id"], status, f"CloudWatch Alarm: {alarm_name} is {alarm_state}")
+            "SELECT * FROM services WHERE LOWER(REPLACE(name, ' ', '-')) = %s",
+            (service_key,)
         )
-        conn.commit()
+        service = cursor.fetchone()
 
-        ses = boto3.client('ses', region_name='us-east-1')
-        ses.send_email(
-            Source      = service['dev_email'],
-            Destination = {'ToAddresses': [service['dev_email']]},
-            Message     = {
-                'Subject': {'Data': f"ALERT: {service['name']} is {status}"},
-                'Body':    {'Text': {'Data': f"Service: {service['name']}\nURL: {service['url']}\nStatus: {status}\nReason: {alarm_reason}"}}
-            }
-        )
-        print(f"Alert sent for {service['name']}: {status}")
+        if service:
+            status = "DOWN" if alarm_state == "ALARM" else "UP"
+            cursor.execute(
+                "INSERT INTO incidents (service_id, status, error_message) VALUES (%s, %s, %s)",
+                (service["id"], status, f"CloudWatch Alarm: {alarm_name} is {alarm_state}")
+            )
+            conn.commit()
 
-    conn.close()
+            ses = boto3.client('ses', region_name='us-east-1')
+            ses.send_email(
+                Source      = 'randubnikov@gmail.com',
+                Destination = {'ToAddresses': [service['dev_email']]},
+                Message     = {
+                    'Subject': {'Data': f"ALERT: {service['name']} is {status}"},
+                    'Body':    {'Text': {'Data': f"Service: {service['name']}\nURL: {service['url']}\nStatus: {status}\nReason: {alarm_reason}"}}
+                }
+            )
+            print(f"Alert sent for {service['name']}: {status}")
+    finally:
+        conn.close()
+
 def lambda_handler(event, context):
     print("EVENT:", json.dumps(event))
     if 'rawPath' in event or 'path' in event:
