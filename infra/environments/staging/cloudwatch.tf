@@ -18,6 +18,8 @@ resource "aws_cloudwatch_metric_alarm" "service_health" {
     aws_sns_topic.alerts.arn
   ]
 
+  depends_on = [aws_lambda_permission.sns]
+
   tags = {
     Environment = var.environment
     Project     = "monitor"
