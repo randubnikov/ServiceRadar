@@ -200,4 +200,4 @@ Running 4 hours a day comes out to about $47/month.
 
 ---
 
-Built by Ran Dubnikov with AI assistance from Claude (Anthropic) — DevOps Final Project, 2026
+Built by Ran Dubnikov — DevOps Final Project, 2026
