@@ -200,4 +200,8 @@ Running 4 hours a day comes out to about $47/month.
 
 ---
 
+**Live Dashboard:** http://serviceradar-dashboard-staging.s3-website-us-east-1.amazonaws.com
+
+---
+
 Built by Ran Dubnikov — DevOps Final Project, 2026
