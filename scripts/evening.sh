@@ -19,37 +19,22 @@ done
 echo "Waiting 60 seconds for LBs to release security groups..."
 sleep 60
 
-echo "Cleaning up leftover security groups..."
-VPC_ID=$(aws ec2 describe-vpcs --region us-east-1 \
-  --filters "Name=tag:Name,Values=staging-vpc" \
-  --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
-
-if [ -z "$VPC_ID" ] || [ "$VPC_ID" = "None" ]; then
-  VPC_ID=$(aws ec2 describe-vpcs --region us-east-1 \
-    --filters "Name=tag:Project,Values=monitor" \
-    --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
-fi
-
-if [ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ]; then
-  echo "Found VPC: $VPC_ID"
-  for attempt in 1 2 3; do
-    FAILED=0
-    for sg in $(aws ec2 describe-security-groups \
-      --filters "Name=vpc-id,Values=$VPC_ID" \
-      --region us-east-1 \
-      --query 'SecurityGroups[?GroupName!=`default`].GroupId' \
-      --output text 2>/dev/null); do
-      aws ec2 delete-security-group --group-id "$sg" --region us-east-1 2>/dev/null \
-        && echo "Deleted SG: $sg" \
-        || { echo "SG $sg still in use, will retry"; FAILED=1; }
-    done
-    [ $FAILED -eq 0 ] && break
-    echo "Attempt $attempt/3 — waiting 30s before retry..."
-    sleep 30
+echo "Cleaning up leftover k8s-elb security groups..."
+for attempt in 1 2 3; do
+  FAILED=0
+  for sg in $(aws ec2 describe-security-groups \
+    --filters "Name=group-name,Values=k8s-elb-*" \
+    --region us-east-1 \
+    --query 'SecurityGroups[*].GroupId' \
+    --output text 2>/dev/null); do
+    aws ec2 delete-security-group --group-id "$sg" --region us-east-1 2>/dev/null \
+      && echo "Deleted SG: $sg" \
+      || { echo "SG $sg still in use, will retry"; FAILED=1; }
   done
-else
-  echo "No VPC found - skipping SG cleanup"
-fi
+  [ $FAILED -eq 0 ] && break
+  echo "Attempt $attempt/3 — waiting 30s before retry..."
+  sleep 30
+done
 
 echo "Cleaning up ECR images..."
 aws ecr batch-delete-image \
