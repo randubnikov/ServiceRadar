@@ -51,10 +51,9 @@ resource "aws_lambda_function" "incident_handler" {
 
   environment {
     variables = {
-      DB_HOST     = var.db_host
-      DB_USER     = var.db_username
-      DB_PASSWORD = var.db_password
-      DB_NAME     = var.db_name
+      DB_HOST       = var.db_host
+      DB_NAME       = var.db_name
+      DB_SECRET_ARN = var.db_secret_arn
     }
   }
 
@@ -63,6 +62,20 @@ resource "aws_lambda_function" "incident_handler" {
     Project     = "monitor"
   }
 }
+resource "aws_iam_role_policy" "lambda_secrets" {
+  name = "${var.environment}-lambda-secrets-policy"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "secretsmanager:GetSecretValue"
+      Resource = var.db_secret_arn
+    }]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "lambda_ses" {
   role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSESFullAccess"

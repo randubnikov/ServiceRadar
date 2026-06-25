@@ -30,8 +30,7 @@ module "lambda" {
   environment       = "staging"
   private_subnets   = module.vpc.private_subnets
   security_group_id = module.aurora.aurora_security_group_id
-  db_username       = var.db_username
-  db_password       = var.db_password
+  db_secret_arn     = aws_secretsmanager_secret.db.arn
   db_host           = module.aurora.aurora_endpoint
   db_name           = "monitor_db"
 }

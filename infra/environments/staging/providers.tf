@@ -8,9 +8,11 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "monitor-terraform-state-randubnikov"
-    key    = "staging/terraform.tfstate"
-    region = "us-east-1"
+    bucket         = "monitor-terraform-state-randubnikov"
+    key            = "staging/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-lock"
+    encrypt        = true
   }
 }
 

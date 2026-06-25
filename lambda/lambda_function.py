@@ -3,11 +3,22 @@ import os
 import pymysql
 import boto3
 
+_db_creds = None
+
+def get_db_creds():
+    global _db_creds
+    if _db_creds is None:
+        sm = boto3.client('secretsmanager', region_name='us-east-1')
+        secret = sm.get_secret_value(SecretId=os.environ['DB_SECRET_ARN'])
+        _db_creds = json.loads(secret['SecretString'])
+    return _db_creds
+
 def get_conn():
+    creds = get_db_creds()
     return pymysql.connect(
         host        = os.environ['DB_HOST'],
-        user        = os.environ['DB_USER'],
-        password    = os.environ['DB_PASSWORD'],
+        user        = creds['username'],
+        password    = creds['password'],
         database    = os.environ['DB_NAME'],
         cursorclass = pymysql.cursors.DictCursor
     )

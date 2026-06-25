@@ -13,17 +13,11 @@ variable "security_group_id" {
   type        = string
 }
 
-variable "db_username" {
-  description = "Database username"
+variable "db_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing DB credentials"
   type        = string
-  sensitive   = true
 }
 
-variable "db_password" {
-  description = "Database password"
-  type        = string
-  sensitive   = true
-}
 variable "db_host" {
   description = "Aurora MySQL endpoint"
   type        = string
