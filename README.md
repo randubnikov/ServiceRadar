@@ -28,7 +28,7 @@ No one has to notice. The system notices for you.
 - **Terraform** - every AWS resource is code. Nothing was clicked in the console.
 - **EKS + Kubernetes** - the app runs in a real cluster with 2 nodes
 - **Helm** - deployments are templated and versioned
-- **ArgoCD** - push to GitHub, it deploys itself. That is GitOps.
+- **ArgoCD** - push to GitHub, it deploys itself
 - **GitHub Actions** - CI builds the image and pushes it to ECR on every merge
 - **Aurora MySQL** - stores services and incidents
 - **Route53** - health checks from multiple AWS regions, checks actual HTTP response
